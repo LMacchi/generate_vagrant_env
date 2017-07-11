@@ -5,6 +5,7 @@ require 'optparse'
 
 # Get arguments from CLI
 options = {}
+options[:force] = false
 o = OptionParser.new do |opts|
   opts.banner = "Usage: #{$0}"
   opts.on('-p [/path/to/project/dir]', '--proj_dir [/path/to/project/dir]', "Required: Path to project containing modules under development. Ex: ~/workspace/project1") do |o|
@@ -29,6 +30,7 @@ proj_dir = options[:proj_dir]
 out_file = options[:out_file]
 dependencies = Array.new()
 out_file = "#{proj_dir}/metadata.json" unless out_file
+require 'pry'; binding.pry
 
 # Validate vars
 unless proj_dir
@@ -43,7 +45,7 @@ unless File.directory?(proj_dir)
   exit 2
 end
 
-unless File.exists?(out_file) and options[:force]
+if File.exists?(out_file) and ! options[:force]
   puts "ERROR: File #{out_file} already exists. Delete it or use force option."
   puts o
   exit 2
@@ -68,3 +70,4 @@ metadata = File.open(out_file, "w") do |fh|
   fh.puts JSON.pretty_generate(text)
 end
 
+puts "File #{out_file} has been generated"

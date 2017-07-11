@@ -101,4 +101,5 @@ Once you're done testing, destroy the vm:
 ## Notes
 - The Vagrant Puppet provisioner maps Puppet module directories in the guest to a host directory, so all your dependencies will be stored in your
 host machine
+- Puppet agent hardcoded to RHEL7 since I was in a bit of rush to deliver this project. Will re-do Puppet agent installation.
 - Contributions welcome

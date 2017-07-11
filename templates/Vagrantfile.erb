@@ -79,7 +79,7 @@ Vagrant.configure(2) do |config|
         echo "No Puppetfile found in Vagrant environment"
       else
         cd /vagrant
-        sudo #{puppet_bin}/librarian-puppet install --path #{code_dir}
+        sudo #{puppet_bin}/librarian-puppet install --path=#{code_dir}
       fi
     SHELL
 

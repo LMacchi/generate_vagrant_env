@@ -44,11 +44,11 @@ end
 o.parse!
 
 # Create vars to use
-proj_dir = options[:proj_dir]
+proj_dir = options[:proj_dir].gsub('/', '\\')
 box = options[:box]
 box_ver = options[:box_ver]
 box_url = options[:box_url]
-disk = options[:disk]
+disk = options[:disk].gsub('/', '\\')
 node_name = options[:node_name]
 master = options[:server]
 

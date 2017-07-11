@@ -6,13 +6,16 @@
 require 'optparse'
 require 'erb'
 require 'pathname'
+require 'fileutils'
+require 'yaml'
+require 'json'
 
 # Get arguments from CLI
 options = {}
 o = OptionParser.new do |opts|
   opts.banner = "Usage: #{$0}"
-  opts.on('-m [/path/to/module/project]', '--mod_dir [/path/to/module/project]', "Required: Path to project containing modules under development. Ex: ~/workspace/project1") do |o|
-    options[:mod_dir] = o
+  opts.on('-p [/path/to/module/project]', '--proj_dir [/path/to/module/project]', "Required: Path to project containing modules under development. Ex: ~/workspace/project1") do |o|
+    options[:proj_dir] = o
   end
   opts.on('-b [vagrant_box]', '--box [vagrant_box]', "Required: Vagrant box title. Ex: puppetlabs/centos-7.2-64-puppet") do |o|
     options[:box] = o
@@ -29,9 +32,6 @@ o = OptionParser.new do |opts|
   opts.on('-n [node_name]', '--node_name [node_name]', "Optional: Name for the node to be created. Ex: test.puppetlabs.vm") do |o|
     options[:node_name] = o
   end
-  opts.on('-p [puppet_version]', '--puppet [puppet_version]', "Optional: Puppet Enterprise version installed in the node. Ex: 2016.4.5. Default is 4") do |o|
-    options[:puppet] = o
-  end
   opts.on('-s [puppet_server_host]', '--server [puppet_version]', "Optional: URL/IP of the Puppet Master server") do |o|
     options[:server] = o
   end
@@ -44,20 +44,27 @@ end
 o.parse!
 
 # Create vars to use
-mod_dir = options[:mod_dir]
+proj_dir = options[:proj_dir]
 box = options[:box]
 box_ver = options[:box_ver]
 box_url = options[:box_url]
 disk = options[:disk]
 node_name = options[:node_name]
-puppet = options[:puppet]
 master = options[:server]
 
-# Validate vars
-puppet = '4' unless puppet
+mod_dir = "#{proj_dir}/modules"
+vag_dir = "#{proj_dir}/vagrant"
+puppet = '4'
 
-unless mod_dir
-  puts "ERROR: mod_dir is a required argument"
+# Validate vars
+unless proj_dir
+  puts "ERROR: proj_dir is a required argument"
+  puts o
+  exit 2
+end
+
+unless File.directory?(proj_dir)
+  puts "ERROR: #{proj_dir} does not exist"
   puts o
   exit 2
 end
@@ -85,6 +92,14 @@ end
 code_dir = '/vagrant/puppet'
 global_mod_dir = '/etc/puppet/modules'
 
+# Generate Vagrant Structure
+vag_dirs = ['puppet','puppet/environments', 'puppet/modules', 'puppet/manifests']
+FileUtils::mkdir_p vag_dir unless File.directory?(vag_dir)
+vag_dirs.each do |d|
+  puts "creating #{vag_dir}/#{d}"
+  FileUtils::mkdir_p "#{vag_dir}/#{d}" unless File.directory?("#{vag_dir}/#{d}")
+end
+
 # Generate Vagrantfile
 vf_template = "#{File.expand_path(File.dirname(__FILE__))}/templates/Vagrantfile.erb"
 unless File.exists?(vf_template)
@@ -93,13 +108,13 @@ unless File.exists?(vf_template)
 end
 
 vf = File.read(vf_template)
-vf_out = "#{File.expand_path(File.dirname(__FILE__))}/Vagrantfile"
+vf_out = "#{vag_dir}/Vagrantfile"
 
 file_out = File.open(vf_out, "w") do |fh|
   fh.puts ERB.new(vf, nil, '-').result()
 end
 
-# Read all directories in mod_dir
+# Read all directories in proj_dir
 dirs = Pathname.new(mod_dir).children.select {|f| f.directory? }.collect { |p| File.basename(p.to_s) }
 
 # Generate site.pp
@@ -110,10 +125,33 @@ unless File.exists?(site_template)
 end
 
 site = File.read(site_template)
-site_out = "#{File.expand_path(File.dirname(__FILE__))}/puppet/manifests/site.pp"
+site_out = "#{vag_dir}/puppet/manifests/site.pp"
 
 file_out = File.open(site_out, "w") do |fh|
   fh.puts ERB.new(site, nil, '-').result()
+end
+
+# Generate project metadata.json
+dependencies = Array.new()
+met_out = "#{vag_dir}/metadata.json"
+
+# Collect metadata.json and save in array
+Dir.glob("#{mod_dir}/*/metadata.json").map do |met|
+  data = YAML.load_file(met)
+  data['dependencies'].each do |dep|
+    name = dep['name']
+    ver = dep['version_requirement']
+    if ! dependencies.include?(dep)
+      dependencies.push(dep)
+    end
+  end
+end
+
+text = { "dependencies" => dependencies }
+
+# Save collected text
+metadata = File.open(met_out, "w") do |fh|
+  fh.puts JSON.pretty_generate(text)
 end
 
 # Generate Puppetfile
@@ -124,8 +162,10 @@ unless File.exists?(pf_template)
 end
 
 pf = File.read(pf_template)
-pf_out = "#{mod_dir}/Puppetfile"
+pf_out = "#{vag_dir}/Puppetfile"
 
 file_out = File.open(pf_out, "w") do |fh|
   fh.puts ERB.new(pf, nil, '-').result()
 end
+
+puts "Generated Vagrant environment in #{vag_dir}"

@@ -74,7 +74,13 @@ Vagrant.configure(2) do |config|
       # Metadata.json is in the project dir
       cd #{global_mod_dir}
       echo "Installing modules in the Puppetfile"
-      sudo #{puppet_bin}/librarian-puppet install --path #{code_dir}
+      ls /vagrant/Puppetfile > /dev/null 2>&1
+      if [[ $? -ne 0 ]]; then
+        echo "No Puppetfile found in Vagrant environment"
+      else
+        cd /vagrant
+        sudo #{puppet_bin}/librarian-puppet install --path #{code_dir}
+      fi
     SHELL
 
 <% unless disk.nil? -%>

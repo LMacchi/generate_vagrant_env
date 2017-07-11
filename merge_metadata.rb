@@ -30,7 +30,6 @@ proj_dir = options[:proj_dir]
 out_file = options[:out_file]
 dependencies = Array.new()
 out_file = "#{proj_dir}/metadata.json" unless out_file
-require 'pry'; binding.pry
 
 # Validate vars
 unless proj_dir

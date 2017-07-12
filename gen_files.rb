@@ -44,18 +44,18 @@ end
 o.parse!
 
 # Create vars to use
-proj_dir = options[:proj_dir].gsub('\\','/')
+proj_dir = Pathname.new(options[:proj_dir])
 box = options[:box]
 box_ver = options[:box_ver]
 box_url = options[:box_url]
 if options[:disk]
-  disk = options[:disk].gsub('\\','/')
+  disk = Pathname.new(options[:disk])
 end
 node_name = options[:node_name]
 master = options[:server]
 
-mod_dir = "#{proj_dir}/modules"
-vag_dir = "#{proj_dir}/vagrant"
+mod_dir = proj_dir + 'modules'
+vag_dir = proj_dir + 'vagrant'
 puppet = '4'
 
 # Validate vars
@@ -65,14 +65,14 @@ unless proj_dir
   exit 2
 end
 
-unless File.directory?(proj_dir)
-  puts "ERROR: #{proj_dir} does not exist"
+unless proj_dir.directory?
+  puts "ERROR: #{proj_dir.to_s} does not exist"
   puts o
   exit 2
 end
 
-unless File.directory?(mod_dir)
-  puts "ERROR: #{mod_dir} does not exist"
+unless mod_dir.directory?
+  puts "ERROR: #{mod_dir.to_s} does not exist"
   puts o
   exit 2
 end
@@ -85,60 +85,54 @@ end
 
 # Assign internal vars
 if puppet =~ /^3/
-  puppet_bin = '/opt/puppet/bin'
+  puppet_bin = Pathname.new('/opt/puppet/bin')
 elsif puppet =~ /^4/ || puppet =~ /^2/
-  puppet_bin = '/opt/puppetlabs/puppet/bin'
+  puppet_bin = Pathname.new('/opt/puppetlabs/puppet/bin')
 end
 
 # These values come from the Puppet provisioner in Vagrant
-code_dir = '/vagrant/puppet'
-global_mod_dir = '/etc/puppet/modules'
+code_dir = Pathname.new('/vagrant/puppet')
+global_mod_dir = Pathname.new('/etc/puppet/modules')
 
 # Generate Vagrant Structure
-vag_dirs = ['puppet','puppet/environments', 'puppet/modules', 'puppet/manifests']
-FileUtils::mkdir_p vag_dir unless File.directory?(vag_dir)
-vag_dirs.each do |d|
-  puts "creating #{vag_dir}/#{d}"
-  FileUtils::mkdir_p "#{vag_dir}/#{d}" unless File.directory?("#{vag_dir}/#{d}")
+vag_dirs = ['puppet/environments', 'puppet/modules', 'puppet/manifests']
+vag_dirs.each do |vd|
+  d = vag_dir + vd
+  puts "Creating #{d.to_s}"
+  d.mkpath
 end
 
 # Generate Vagrantfile
-vf_template = "#{File.expand_path(File.dirname(__FILE__))}/templates/Vagrantfile.erb"
-unless File.exists?(vf_template)
-  puts "Vagrantfile template not found. Make sure it is in #{vf_template} to continue."
+vf_template = Pathname(__FILE__).dirname + 'templates' + 'Vagrantfile.erb'
+unless vf_template.file?
+  puts "Vagrantfile template not found. Make sure it is in #{vf_template_to.s} to continue."
   exit 2
 end
 
-vf = File.read(vf_template)
-vf_out = "#{vag_dir}/Vagrantfile"
-
-file_out = File.open(vf_out, "w") do |fh|
-  fh.puts ERB.new(vf, nil, '-').result()
-end
+vf = vf_template.read
+vf_out = vag_dir + 'Vagrantfile'
+vf_out.write(ERB.new(vf, nil, '-').result())
 
 # Read all directories in proj_dir
-dirs = Pathname.new(mod_dir).children.select {|f| f.directory? }.collect { |p| File.basename(p.to_s) }
+dirs = mod_dir.children.select {|f| f.directory? }.collect { |p| File.basename(p.to_s) }
 
 # Generate site.pp
-site_template = "#{File.expand_path(File.dirname(__FILE__))}/templates/site.pp.erb"
-unless File.exists?(site_template)
-  puts "Site.pp template not found. Make sure it is in #{site_template} to continue."
+site_template = Pathname(__FILE__).dirname + 'templates'  + 'site.pp.erb'
+unless site_template.file?
+  puts "Site.pp template not found. Make sure it is in #{site_template.to_s} to continue."
   exit 2
 end
 
-site = File.read(site_template)
-site_out = "#{vag_dir}/puppet/manifests/site.pp"
-
-file_out = File.open(site_out, "w") do |fh|
-  fh.puts ERB.new(site, nil, '-').result()
-end
+site = site_template.read
+site_out = vag_dir + 'puppet' + 'manifests' + 'site.pp'
+site_out.write(ERB.new(site, nil, '-').result())
 
 # Generate project metadata.json
 dependencies = Array.new()
-met_out = "#{vag_dir}/metadata.json"
+met_out = vag_dir + 'metadata.json'
 
 # Collect metadata.json and save in array
-Dir.glob("#{mod_dir}/*/metadata.json").map do |met|
+Pathname.glob(mod_dir + '*' + 'metadata.json').map do |met|
   data = YAML.load_file(met)
   data['dependencies'].each do |dep|
     name = dep['name']
@@ -152,22 +146,17 @@ end
 text = { "dependencies" => dependencies }
 
 # Save collected text
-metadata = File.open(met_out, "w") do |fh|
-  fh.puts JSON.pretty_generate(text)
-end
+met_out.write(JSON.pretty_generate(text))
 
 # Generate Puppetfile
-pf_template = "#{File.expand_path(File.dirname(__FILE__))}/templates/Puppetfile.erb"
-unless File.exists?(pf_template)
-  puts "Puppetfile template not found. Make sure it is in #{pf_template} to continue."
+pf_template = Pathname(__FILE__).dirname + 'templates' + 'Puppetfile.erb'
+unless pf_template.file?
+  puts "Puppetfile template not found. Make sure it is in #{pf_template.to_s} to continue."
   exit 2
 end
 
-pf = File.read(pf_template)
-pf_out = "#{vag_dir}/Puppetfile"
+pf = pf_template.read
+pf_out = vag_dir + 'Puppetfile'
+pf_out.write(ERB.new(pf, nil, '-').result())
 
-file_out = File.open(pf_out, "w") do |fh|
-  fh.puts ERB.new(pf, nil, '-').result()
-end
-
-puts "Generated Vagrant environment in #{vag_dir}"
+puts "Generated Vagrant environment in #{vag_dir.to_s}"

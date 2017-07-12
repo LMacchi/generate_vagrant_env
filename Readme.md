@@ -47,12 +47,13 @@ Librarian-puppet was chosen over R10k because it can resolve dependencies by dif
 In order to get the dependencies from the modules metadata.json, the generate files script reads them and consolidates them into a
 metadata.json inside the vagrant directory. That metadata.json file is called by the Puppetfile in the vagrant directory.
 
+Puppet is installed with a `install.sh`. The template to use for that script can be passed via command line.
+
 Finally site.pp includes all of the modules found inside the modules directory.
 
 ## Usage
 
 ```
-★ lmacchi@Titere 14:39:15 ~/puppet/Repos/generate_vagrant_env> ./gen_files.rb
 Usage: ./gen_files.rb
     -p [/path/to/module/project],    Required: Path to project containing modules under development. Ex: ~/workspace/project1
         --proj_dir
@@ -60,9 +61,10 @@ Usage: ./gen_files.rb
     -v [vagrant_box_version],        Optional: Vagrant box version. Ex: 1.0.1
         --box_ver
     -u, --box_url [vagrant_box_url]  Optional: Vagrant box url. Ex: https://vagrantcloud.com/puppetlabs/boxes/centos-7.2-64-puppet
-    -d, --disk [vagrantboxurl]       Optional: Secondary disk name. Ex: rhelSecondDisk.vdi
+    -d, --disk [/path/to/disk]       Optional: Secondary disk name. Ex: rhelSecondDisk.vdi
     -n, --node_name [node_name]      Optional: Name for the node to be created. Ex: test.puppetlabs.vm
-    -s, --server [puppet_version]    Optional: URL/IP of the Puppet Master server
+    -i [install_script_template],    Optional: Template for Puppet install script. Defaults to install_puppet_el7.sh.erb
+        --install_script
     -h, --help                       Display this help
 ```
 

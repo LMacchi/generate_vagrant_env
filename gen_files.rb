@@ -26,14 +26,14 @@ o = OptionParser.new do |opts|
   opts.on('-u [vagrant_box_url]', '--box_url [vagrant_box_url]', "Optional: Vagrant box url. Ex: https://vagrantcloud.com/puppetlabs/boxes/centos-7.2-64-puppet") do |o|
     options[:box_url] = o
   end
-  opts.on('-d [/path/to/disk]', '--disk [vagrantboxurl]', "Optional: Secondary disk name. Ex: rhelSecondDisk.vdi") do |o|
+  opts.on('-d [/path/to/disk]', '--disk [/path/to/disk]', "Optional: Secondary disk name. Ex: rhelSecondDisk.vdi") do |o|
     options[:disk] = o
   end
   opts.on('-n [node_name]', '--node_name [node_name]', "Optional: Name for the node to be created. Ex: test.puppetlabs.vm") do |o|
     options[:node_name] = o
   end
-  opts.on('-s [puppet_server_host]', '--server [puppet_version]', "Optional: URL/IP of the Puppet Master server") do |o|
-    options[:server] = o
+  opts.on('-i [install_script_template]', '--install_script [install_script_template]', "Optional: Template for Puppet install script. Defaults to install_puppet_el7.sh.erb") do |o|
+    options[:install_script] = o
   end
   opts.on('-h', '--help', 'Display this help') do
     puts opts
@@ -58,6 +58,12 @@ mod_dir = proj_dir + 'modules'
 vag_dir = proj_dir + 'vagrant'
 puppet = '4'
 
+if options[:install_script]
+  install_script = Pathname(__FILE__).dirname + 'templates' + options[:install_script]
+else
+  install_script = Pathname(__FILE__).dirname + 'templates' + 'install_puppet_el7.sh.erb'
+end
+
 # Validate vars
 unless proj_dir
   puts "ERROR: proj_dir is a required argument"
@@ -79,6 +85,12 @@ end
 
 unless box
   puts "ERROR: box is a required argument"
+  puts o
+  exit 2
+end
+
+unless install_script.file?
+  puts "ERROR: #{install_script} does not exist"
   puts o
   exit 2
 end
@@ -150,5 +162,14 @@ end
 
 pf_out = vag_dir + 'Puppetfile'
 pf_out.write(ERB.new(pf_template.read, nil, '-').result())
+
+unless install_script.file?
+  puts "Puppet install script template not found. Make sure it is in #{is_template.to_s} to continue."
+  exit 2
+end
+
+is_out = vag_dir + 'install.sh'
+is_out.write(ERB.new(install_script.read, nil, '-').result())
+is_out.chmod(0755)
 
 puts "Generated Vagrant environment in #{vag_dir.to_s}"

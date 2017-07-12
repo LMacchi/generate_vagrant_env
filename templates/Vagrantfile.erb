@@ -12,11 +12,6 @@ node_name = '<%= node_name %>'
 <% else -%>
 node_name = 'test.lmacchi.com'
 <% end -%>
-<% if master -%>
-yum_repo = 'https://<%= master %>:8140/packages/current/el-7-x86_64.repo'
-<% else -%>
-rpm_url = 'http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm'
-<% end -%>
 
 ### Internal Vars ###
 mod_path = '<%= File.dirname(mod_dir)%>'
@@ -40,20 +35,8 @@ Vagrant.configure(2) do |config|
     node.vm.provision :shell, privileged: true, inline: <<-SHELL
       sudo systemctl stop firewalld
       sudo hostnamectl set-hostname #{node_name}
-      # Is Puppet installed?
-      ls #{puppet_bin}/puppet > /dev/null 2>&1
-      # This is temporary, no logic, just install LTS agent
-      if [[ $? -ne 0 ]]; then
-        sudo yum -y remove puppet puppet-agent > /dev/null 2>&1
-<% if master -%>
-        sudo wget -q --no-check-certificate -O /etc/yum.repos.d/puppet.repo #{yum_repo}
-<% else -%>
-        sudo rpm -ivh install #{rpm_url}
-<% end -%>
-        sudo yum -y install puppet-agent
-        echo "export PATH=#{puppet_bin}:$PATH" >> ~/.bash_profile
-        export PATH=#{puppet_bin}:$PATH
-      fi
+      echo "Installing puppet from install script"
+      sudo /vagrant/install.sh
       # Puppet provisioner looks for puppet in /bin
       sudo #{puppet_bin}/puppet resource file '/bin/puppet' target=#{puppet_bin}/puppet
       ls #{puppet_bin}/librarian-puppet > /dev/null 2>&1

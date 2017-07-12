@@ -83,16 +83,11 @@ unless box
   exit 2
 end
 
-# Assign internal vars
-if puppet =~ /^3/
-  puppet_bin = Pathname.new('/opt/puppet/bin')
-elsif puppet =~ /^4/ || puppet =~ /^2/
-  puppet_bin = Pathname.new('/opt/puppetlabs/puppet/bin')
-end
-
-# These values come from the Puppet provisioner in Vagrant
-code_dir = Pathname.new('/vagrant/puppet')
-global_mod_dir = Pathname.new('/etc/puppet/modules')
+# These values are for the Puppet provisioner in Vagrant
+# we won't use them in this script
+code_dir = '/vagrant/puppet'
+global_mod_dir = '/etc/puppet/modules'
+puppet_bin = '/opt/puppetlabs/puppet/bin'
 
 # Generate Vagrant Structure
 vag_dirs = ['environments', 'modules', 'manifests']

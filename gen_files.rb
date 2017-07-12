@@ -109,9 +109,8 @@ unless vf_template.file?
   exit 2
 end
 
-vf = vf_template.read
 vf_out = vag_dir + 'Vagrantfile'
-vf_out.write(ERB.new(vf, nil, '-').result())
+vf_out.write(ERB.new(vf_template.read, nil, '-').result())
 
 # Read all directories in proj_dir
 dirs = mod_dir.children.select {|f| f.directory? }.collect { |p| File.basename(p.to_s) }
@@ -123,9 +122,8 @@ unless site_template.file?
   exit 2
 end
 
-site = site_template.read
 site_out = vag_dir + 'puppet' + 'manifests' + 'site.pp'
-site_out.write(ERB.new(site, nil, '-').result())
+site_out.write(ERB.new(site_template.read, nil, '-').result())
 
 # Generate project metadata.json
 dependencies = Array.new()
@@ -155,8 +153,7 @@ unless pf_template.file?
   exit 2
 end
 
-pf = pf_template.read
 pf_out = vag_dir + 'Puppetfile'
-pf_out.write(ERB.new(pf, nil, '-').result())
+pf_out.write(ERB.new(pf_template.read, nil, '-').result())
 
 puts "Generated Vagrant environment in #{vag_dir.to_s}"

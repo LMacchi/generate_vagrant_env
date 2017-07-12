@@ -44,12 +44,13 @@ end
 o.parse!
 
 # Create vars to use
-# Win has no gsub. Thanks win.
-proj_dir = options[:proj_dir].split('\\').join('/')
+proj_dir = options[:proj_dir].gsub('\\','/')
 box = options[:box]
 box_ver = options[:box_ver]
 box_url = options[:box_url]
-disk = options[:disk].split('\\').join('/')
+if options[:disk]
+  disk = options[:disk].gsub('\\','/')
+end
 node_name = options[:node_name]
 master = options[:server]
 

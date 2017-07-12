@@ -4,7 +4,6 @@ Script that generates a Vagrant environment to test Puppet code using Puppet app
 ## Pre-requirements
 
 - Virtualbox and Vagrant installed
-- Puppet Enterprise 4+ installed
 - Project directory with the following structure:
 
 ```

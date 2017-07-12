@@ -95,9 +95,9 @@ code_dir = Pathname.new('/vagrant/puppet')
 global_mod_dir = Pathname.new('/etc/puppet/modules')
 
 # Generate Vagrant Structure
-vag_dirs = ['puppet/environments', 'puppet/modules', 'puppet/manifests']
+vag_dirs = ['environments', 'modules', 'manifests']
 vag_dirs.each do |vd|
-  d = vag_dir + vd
+  d = vag_dir + 'puppet' + vd
   puts "Creating #{d.to_s}"
   d.mkpath
 end

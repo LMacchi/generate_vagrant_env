@@ -2,6 +2,8 @@
 # Script that generates:
 # - Vagrantfile
 # - site.pp
+# - metadata.json
+# - Puppetfile
 
 require 'optparse'
 require 'erb'
